@@ -6,7 +6,6 @@ import { Search, ShoppingBag, Menu, Home, Package, LayoutGrid, Info } from "luci
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -20,6 +19,7 @@ import {
     SheetContent,
     SheetTrigger,
 } from "@/components/ui/sheet";
+import { CartSheet } from "@/components/cart-sheet";
 
 import { motion } from "framer-motion";
 
@@ -96,13 +96,7 @@ export function Navbar() {
                             className="w-[150px] lg:w-[250px] pl-9 bg-muted/50 focus-visible:ring-primary border-transparent rounded-full transition-all focus:w-[200px] lg:focus:w-[300px]"
                         />
                     </div>
-                    <Button variant="ghost" size="icon" className="relative hover:bg-primary/10 transition-colors rounded-full">
-                        <ShoppingBag className="h-5 w-5" />
-                        <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-[10px] rounded-full border-2 border-background animate-pulse">
-                            3
-                        </Badge>
-                        <span className="sr-only">Shopping Cart</span>
-                    </Button>
+                    <CartSheet />
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="relative h-9 w-9 rounded-full ring-2 ring-transparent transition-all hover:ring-primary/20">

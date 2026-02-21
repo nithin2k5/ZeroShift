@@ -19,8 +19,9 @@ import {
     SheetTrigger,
 } from "@/components/ui/sheet";
 import { CartSheet } from "@/components/cart-sheet";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
+import { useState, useEffect } from "react";
 
 const NAV_LINKS = [
     { href: "/", label: "Home", icon: Home },
@@ -32,6 +33,34 @@ const NAV_LINKS = [
 export function Navbar() {
     const { user, isAuthenticated, isAdmin, logout, loading } = useAuth();
     const router = useRouter();
+    const { scrollY } = useScroll();
+
+    // Header background opacity based on scroll
+    const headerBg = useTransform(
+        scrollY,
+        [0, 50],
+        ["rgba(var(--background), 0)", "rgba(var(--background), 0.95)"]
+    );
+    const headerBorder = useTransform(
+        scrollY,
+        [0, 50],
+        ["rgba(var(--border), 0)", "rgba(var(--border), 0.5)"]
+    );
+    const headerShadow = useTransform(
+        scrollY,
+        [0, 50],
+        ["none", "0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)"]
+    );
+
+    const [scrolled, setScrolled] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setScrolled(window.scrollY > 20);
+        };
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
 
     const handleLogout = () => {
         logout();
@@ -45,100 +74,126 @@ export function Navbar() {
 
     return (
         <motion.header
-            initial={{ y: -100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
+            initial={{ y: -100 }}
+            animate={{ y: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed top-4 left-0 right-0 z-50 w-[95%] max-w-7xl mx-auto rounded-full glass border shadow-lg transition-all duration-300"
+            style={{
+                backgroundColor: headerBg as any,
+                borderBottomColor: headerBorder as any,
+                boxShadow: headerShadow as any,
+            }}
+            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 backdrop-blur-md border-b border-transparent`}
         >
-            <div className="px-5 sm:px-8 h-16 flex items-center justify-between">
+            <div className={`container mx-auto px-4 sm:px-6 transition-all duration-300 flex items-center justify-between ${scrolled ? 'h-16' : 'h-20'}`}>
                 {/* Mobile Menu & Logo */}
-                <div className="flex items-center gap-4 lg:hidden">
+                <div className="flex items-center gap-4 lg:hidden flex-none w-1/3">
                     <Sheet>
                         <SheetTrigger asChild>
-                            <Button variant="ghost" size="icon" className="lg:hidden">
-                                <Menu className="h-6 w-6" />
+                            <Button variant="ghost" size="icon" className="lg:hidden hover:bg-muted/50 rounded-full">
+                                <Menu className="h-5 w-5" />
                             </Button>
                         </SheetTrigger>
                         <SheetContent side="left" className="w-[300px]">
-                            <nav className="flex flex-col gap-4 mt-8">
+                            <div className="flex items-center gap-2 mb-8 pl-2">
+                                <div className="bg-foreground text-background p-1.5 rounded-lg">
+                                    <ShoppingBag className="h-5 w-5" />
+                                </div>
+                                <span className="font-bold text-xl tracking-tighter">Zero<span className="text-primary font-black">Shift</span></span>
+                            </div>
+                            <nav className="flex flex-col gap-2">
                                 {NAV_LINKS.map(({ href, label, icon: Icon }) => (
-                                    <Link key={href} href={href} className="text-lg font-medium flex items-center gap-2">
-                                        <Icon className="w-5 h-5" /> {label}
+                                    <Link key={href} href={href} className="text-base font-medium flex items-center gap-4 hover:bg-muted p-3 rounded-xl transition-colors">
+                                        <div className="bg-primary/10 text-primary p-2 rounded-lg">
+                                            <Icon className="w-5 h-5" />
+                                        </div>
+                                        {label}
                                     </Link>
                                 ))}
-                                {isAuthenticated && (
-                                    <>
-                                        <div className="h-px bg-border my-2" />
-                                        <Link href="/account" className="text-lg font-medium flex items-center gap-2">
-                                            <User className="w-5 h-5" /> My Account
+                                {isAuthenticated ? (
+                                    <div className="mt-4 border-t pt-4 border-border/50">
+                                        <Link href="/account" className="text-base font-medium flex items-center gap-4 hover:bg-muted p-3 rounded-xl transition-colors">
+                                            <div className="bg-primary/10 text-primary p-2 rounded-lg"><User className="w-5 h-5" /></div> My Account
                                         </Link>
                                         {isAdmin && (
-                                            <Link href="/admin" className="text-lg font-medium flex items-center gap-2">
-                                                <Shield className="w-5 h-5" /> Admin
+                                            <Link href="/admin" className="text-base font-medium flex items-center gap-4 hover:bg-muted p-3 rounded-xl transition-colors">
+                                                <div className="bg-primary/10 text-primary p-2 rounded-lg"><Shield className="w-5 h-5" /></div> Admin
                                             </Link>
                                         )}
-                                        <button onClick={handleLogout} className="text-lg font-medium flex items-center gap-2 text-destructive">
-                                            <LogOut className="w-5 h-5" /> Log Out
+                                        <button onClick={handleLogout} className="text-base font-medium flex items-center gap-4 hover:bg-destructive/10 text-destructive p-3 rounded-xl transition-colors w-full text-left">
+                                            <div className="bg-destructive/10 p-2 rounded-lg"><LogOut className="w-5 h-5" /></div> Log Out
                                         </button>
-                                    </>
-                                )}
-                                {!isAuthenticated && (
-                                    <>
-                                        <div className="h-px bg-border my-2" />
-                                        <Link href="/login" className="text-lg font-medium">Log In</Link>
-                                        <Link href="/signup" className="text-lg font-medium">Sign Up</Link>
-                                    </>
+                                    </div>
+                                ) : (
+                                    <div className="mt-4 border-t pt-4 border-border/50 flex flex-col gap-2">
+                                        <Button asChild variant="outline" className="w-full justify-start rounded-xl h-12">
+                                            <Link href="/login">Log In</Link>
+                                        </Button>
+                                        <Button asChild className="w-full justify-start rounded-xl h-12">
+                                            <Link href="/signup">Sign Up</Link>
+                                        </Button>
+                                    </div>
                                 )}
                             </nav>
                         </SheetContent>
                     </Sheet>
-                    <Link href="/" className="flex items-center gap-2">
-                        <div className="bg-primary text-primary-foreground p-1.5 rounded-lg">
+                    <Link href="/" className="flex items-center gap-2 sm:hidden">
+                        <ShoppingBag className="h-6 w-6" />
+                    </Link>
+                </div>
+
+                {/* Desktop Logo (Left) */}
+                <div className="hidden sm:flex lg:w-1/4 items-center justify-start lg:block flex-none">
+                    <Link href="/" className="flex items-center gap-2 hover-lift group w-fit">
+                        <div className="bg-foreground text-background p-1.5 rounded-lg group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 shadow-sm">
                             <ShoppingBag className="h-5 w-5" />
                         </div>
-                        <span className="font-bold text-xl tracking-tight hidden sm:inline-block text-gradient">ZeroShift</span>
+                        <span className="font-bold text-2xl tracking-tighter">Zero<span className="text-primary font-black">Shift</span></span>
                     </Link>
                 </div>
 
-                {/* Desktop Navigation */}
-                <div className="hidden lg:flex items-center gap-10">
-                    <Link href="/" className="flex items-center gap-2 mr-6 hover-lift">
-                        <div className="bg-primary text-primary-foreground p-1.5 rounded-lg">
-                            <ShoppingBag className="h-6 w-6" />
-                        </div>
-                        <span className="font-bold text-2xl tracking-tight text-gradient">ZeroShift</span>
-                    </Link>
-                    <nav className="flex items-center gap-6 text-sm font-medium">
-                        {NAV_LINKS.map(({ href, label, icon: Icon }) => (
-                            <Link key={href} href={href} className="relative group transition-colors hover:text-primary text-muted-foreground flex items-center gap-1.5">
-                                <Icon className="w-4 h-4" /> {label}
-                                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
-                            </Link>
-                        ))}
-                    </nav>
-                </div>
+                {/* Desktop Navigation (Center) */}
+                <nav className="hidden lg:flex flex-1 items-center justify-center gap-1">
+                    {NAV_LINKS.map(({ href, label }) => (
+                        <Link
+                            key={href}
+                            href={href}
+                            className="relative group px-5 py-2 hover:text-foreground text-foreground/70 transition-colors rounded-full font-medium"
+                        >
+                            <span className="relative z-10">{label}</span>
+                            <span className="absolute inset-0 bg-muted/50 rounded-full scale-50 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-200 ease-out" />
+                        </Link>
+                    ))}
+                </nav>
 
-                {/* Search, Cart & User */}
-                <div className="flex items-center gap-4">
-                    <div className="hidden md:flex relative group">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                {/* Search, Cart & User (Right) */}
+                <div className="flex flex-none w-[40%] sm:w-1/2 lg:w-1/4 items-center justify-end gap-2 sm:gap-4">
+                    <div className="hidden xl:flex relative group">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-foreground transition-colors" />
                         <Input
                             type="search"
                             placeholder="Search..."
-                            className="w-[150px] lg:w-[250px] pl-9 bg-muted/50 focus-visible:ring-primary border-transparent rounded-full transition-all focus:w-[200px] lg:focus:w-[300px]"
+                            className="w-[180px] pl-9 bg-muted/40 hover:bg-muted/60 focus-visible:bg-muted border-transparent rounded-full transition-all duration-300 focus:w-[220px] h-9 text-sm"
                         />
                     </div>
+
+                    {/* Mobile/Tablet Search Button */}
+                    <Button variant="ghost" size="icon" className="xl:hidden rounded-full hover:bg-muted/50 h-9 w-9">
+                        <Search className="h-4 w-4" />
+                    </Button>
+
+                    <div className="h-5 w-px bg-border hidden sm:block mx-1"></div>
+
                     <CartSheet />
 
-                    {/* Auth: show skeleton while loading */}
+                    {/* Auth */}
                     {loading ? (
                         <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
                     ) : isAuthenticated ? (
                         /* ── Logged-in state ── */
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="relative h-9 w-9 rounded-full ring-2 ring-primary/30 hover:ring-primary/60 transition-all bg-primary text-primary-foreground font-bold text-sm">
-                                    {initials}
+                                <Button variant="ghost" className="relative h-9 w-9 rounded-full border border-transparent hover:border-border transition-all bg-muted text-foreground font-bold text-xs overflow-hidden group p-0">
+                                    <span>{initials}</span>
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -151,13 +206,13 @@ export function Navbar() {
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem asChild>
                                     <Link href="/account" className="cursor-pointer flex items-center gap-2">
-                                        <User className="w-4 h-4" /> My Account
+                                        <User className="w-4 h-4 text-muted-foreground" /> My Account
                                     </Link>
                                 </DropdownMenuItem>
                                 {isAdmin && (
                                     <DropdownMenuItem asChild>
                                         <Link href="/admin" className="cursor-pointer flex items-center gap-2">
-                                            <Shield className="w-4 h-4" /> Admin Dashboard
+                                            <Shield className="w-4 h-4 text-muted-foreground" /> Admin Dashboard
                                         </Link>
                                     </DropdownMenuItem>
                                 )}
@@ -169,11 +224,11 @@ export function Navbar() {
                         </DropdownMenu>
                     ) : (
                         /* ── Signed-out state ── */
-                        <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" className="rounded-full font-medium" asChild>
+                        <div className="flex items-center gap-2 ml-1">
+                            <Button variant="ghost" size="sm" className="rounded-full font-medium hidden sm:flex hover:bg-muted/50 h-9" asChild>
                                 <Link href="/login">Log In</Link>
                             </Button>
-                            <Button size="sm" className="rounded-full font-medium shadow-none" asChild>
+                            <Button size="sm" className="rounded-full font-medium shadow-none h-9 px-4" asChild>
                                 <Link href="/signup">Sign Up</Link>
                             </Button>
                         </div>

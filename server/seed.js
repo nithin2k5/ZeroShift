@@ -1,4 +1,6 @@
 require("dotenv").config();
+const { Pool } = require("pg");
+
 // Strip unsupported parameters that break pg DNS resolution
 const connStr = (process.env.DATABASE_URL || "")
     .replace(/[?&]channel_binding=[^&]*/g, "")

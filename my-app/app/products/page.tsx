@@ -9,22 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 
-// Dummy Product Data integrating both our new and featured products
-const products = [
-    { id: 1, name: "Canvas Field Jacket", price: "₹7,499.00", image: "/images/new-1.jpg", badge: "Just Added" },
-    { id: 2, name: "Premium Denim Jacket", price: "₹8,999.00", image: "/images/prod-1.jpg", badge: "New" },
-    { id: 3, name: "Classic White Sneakers", price: "₹6,999.00", image: "/images/new-3.jpg" },
-    { id: 4, name: "Woven Leather Belt", price: "₹2,599.00", image: "/images/new-4.jpg", badge: "Low Stock" },
-    { id: 5, name: "Linen Blend Overshirt", price: "₹4,999.00", image: "/images/new-2.jpg", badge: "Trending" },
-    { id: 6, name: "Tailored Chino Trousers", price: "₹3,999.00", image: "/images/prod-2.jpg", badge: "Best Seller" },
-    { id: 7, name: "Merino Wool Crewneck", price: "₹5,499.00", image: "/images/prod-3.jpg", badge: "Sale" },
-    { id: 8, name: "Essential Heavyweight Tee", price: "₹2,299.00", image: "/images/prod-4.jpg" },
-    // Replicating for more items to show a full grid
-    { id: 9, name: "Canvas Field Jacket (Olive)", price: "₹7,499.00", image: "/images/new-1.jpg" },
-    { id: 10, name: "Premium Denim Jacket (Washed)", price: "₹8,999.00", image: "/images/prod-1.jpg" },
-    { id: 11, name: "Classic Navy Sneakers", price: "₹6,999.00", image: "/images/new-3.jpg" },
-    { id: 12, name: "Tactical Leather Belt", price: "₹2,599.00", image: "/images/new-4.jpg" },
-];
+import { useEffect, useState } from "react";
+import { productsApi, type Product } from "@/lib/api";
 
 const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -37,6 +23,13 @@ const itemVariants: Variants = {
 };
 
 export default function AllProductsPage() {
+    const [products, setProducts] = useState<Product[]>([]);
+
+    useEffect(() => {
+        productsApi.getAll({ limit: "24", sort: "newest" })
+            .then(res => setProducts(res.products))
+            .catch(err => console.error("Failed to fetch all products:", err));
+    }, []);
     return (
         <main className="min-h-screen bg-background flex flex-col">
             <Navbar />
@@ -82,42 +75,44 @@ export default function AllProductsPage() {
                     >
                         {products.map((product) => (
                             <motion.div variants={itemVariants} key={product.id}>
-                                <Link href={`/products/${product.id}`}>
-                                    <Card className="overflow-hidden bg-transparent border-none shadow-none flex flex-col group h-full rounded-sm p-0 gap-0">
-                                        <div className="relative aspect-[3/4] overflow-hidden bg-muted">
-                                            {product.badge && (
-                                                <Badge className="absolute top-2 left-2 z-20 shadow-none font-medium px-2 py-0.5 rounded-sm bg-background/80 text-foreground backdrop-blur-none" variant={product.badge === 'Low Stock' || product.badge === 'Sale' ? 'destructive' : 'secondary'}>
-                                                    {product.badge}
-                                                </Badge>
-                                            )}
-                                            <Button
-                                                size="icon"
-                                                variant="ghost"
-                                                className="absolute top-2 right-2 z-20 bg-transparent hover:bg-transparent text-foreground/70 hover:text-foreground transition-colors"
-                                                onClick={(e) => e.preventDefault()}
-                                            >
-                                                <Heart className="h-6 w-6 stroke-[1.5]" />
-                                            </Button>
+                                <Card className="overflow-hidden bg-transparent border-none shadow-none flex flex-col group h-full rounded-sm p-0 gap-0">
+                                    <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+                                        {product.badge && (
+                                            <Badge className="absolute top-2 left-2 z-20 shadow-none font-medium px-2 py-0.5 rounded-sm bg-background/80 text-foreground backdrop-blur-none" variant={product.badge === 'Low Stock' || product.badge === 'Sale' ? 'destructive' : 'secondary'}>
+                                                {product.badge}
+                                            </Badge>
+                                        )}
+                                        <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="absolute top-2 right-2 z-20 bg-transparent hover:bg-transparent text-foreground/70 hover:text-foreground transition-colors"
+                                            onClick={(e) => e.preventDefault()}
+                                        >
+                                            <Heart className="h-6 w-6 stroke-[1.5]" />
+                                        </Button>
+                                        <Link href={`/products/${product.id}`} className="absolute inset-0 z-10 w-full h-full">
                                             <motion.img
                                                 whileHover={{ scale: 1.05 }}
                                                 transition={{ duration: 0.6, ease: "easeOut" }}
-                                                src={product.image}
+                                                src={product.images?.[0] || "/images/prod-1.jpg"}
                                                 alt={product.name}
                                                 className="object-cover w-full h-full cursor-pointer"
                                             />
-                                        </div>
+                                        </Link>
+                                    </div>
 
-                                        <CardHeader className="p-3 px-1 pb-2 gap-1">
+                                    <CardHeader className="p-3 px-1 pb-2 gap-1 relative z-20">
+                                        <Link href={`/products/${product.id}`}>
                                             <CardTitle className="font-normal text-base group-hover:text-primary transition-colors cursor-pointer line-clamp-1">
                                                 {product.name}
                                             </CardTitle>
-                                            <CardDescription className="text-base font-medium text-foreground pt-0">
-                                                {product.price}
-                                            </CardDescription>
-                                        </CardHeader>
-                                        <CardContent className="hidden" />
-                                    </Card>
-                                </Link>
+                                        </Link>
+                                        <CardDescription className="text-base font-medium text-foreground pt-0">
+                                            {product.price}
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="hidden" />
+                                </Card>
                             </motion.div>
                         ))}
                     </motion.div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, Upload, Star, Ruler, Truck, Shield, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,33 +9,41 @@ import { Footer } from "@/components/footer";
 import { Separator } from "@/components/ui/separator";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
-const mockProduct = {
-    name: "Classic Heavyweight Override Jacket",
-    price: "₹8,499.00",
-    rating: 4.8,
-    reviews: 124,
-    description: "Constructed from premium heavyweight twill, this override jacket is designed to break in beautifully over time. It features reinforced seam stitching, custom metallic hardware, and an oversized fit ideal for layering during transitional weather.",
-    images: [
-        "/images/prod-1.jpg",
-        "/images/prod-2.jpg",
-        "/images/new-1.jpg",
-        "/images/new-2.jpg",
-    ],
-    sizes: ["S", "M", "L", "XL", "XXL"],
-    colors: [
-        { name: "Forest Green", hex: "#2C402B" },
-        { name: "Ash Grey", hex: "#7E8388" },
-        { name: "Midnight Black", hex: "#111111" }
-    ]
-};
+import { useParams, notFound } from "next/navigation";
+import { productsApi, type Product } from "@/lib/api";
+import { useCart } from "@/context/CartContext";
 
 export default function ProductDetailsPage() {
-    // In a real app we'd fetch product by params.id
+    const params = useParams();
+    const productId = params?.id as string;
+
+    const [product, setProduct] = useState<Product | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
+
+    useEffect(() => {
+        if (!productId) return;
+        productsApi.getById(productId)
+            .then(res => setProduct(res.product))
+            .catch(err => console.error("Failed to fetch product:", err))
+            .finally(() => setLoading(false));
+    }, [productId]);
 
     const [selectedImage, setSelectedImage] = useState(0);
     const [selectedSize, setSelectedSize] = useState("M");
     const [selectedColor, setSelectedColor] = useState("Forest Green");
     const [quantity, setQuantity] = useState(1);
+
+    const { addItem } = useCart();
+
+    const sizes = ["S", "M", "L", "XL", "XXL"];
+    const colors = [
+        { name: "Forest Green", hex: "#2C402B" },
+        { name: "Ash Grey", hex: "#7E8388" },
+        { name: "Midnight Black", hex: "#111111" }
+    ];
+
+    if (loading) return <div className="min-h-screen flex items-center justify-center pt-24"><p className="text-muted-foreground animate-pulse font-medium">Loading product facts...</p></div>;
+    if (!product) return notFound();
 
     return (
         <main className="min-h-screen bg-background flex flex-col">
@@ -49,7 +57,7 @@ export default function ProductDetailsPage() {
                         <div className="lg:col-span-7 flex flex-col-reverse md:flex-row gap-4 h-fit sticky top-28">
                             {/* Thumbnails */}
                             <div className="flex flex-row md:flex-col gap-4 overflow-x-auto md:w-24 shrink-0 pb-2 md:pb-0">
-                                {mockProduct.images.map((img, idx) => (
+                                {product.images.map((img, idx) => (
                                     <button
                                         key={idx}
                                         onClick={() => setSelectedImage(idx)}
@@ -70,8 +78,8 @@ export default function ProductDetailsPage() {
                                         animate={{ opacity: 1, scale: 1 }}
                                         exit={{ opacity: 0 }}
                                         transition={{ duration: 0.4, ease: "easeOut" }}
-                                        src={mockProduct.images[selectedImage]}
-                                        alt={mockProduct.name}
+                                        src={product.images[selectedImage]}
+                                        alt={product.name}
                                         className="object-cover w-full h-full"
                                     />
                                 </AnimatePresence>
@@ -80,20 +88,20 @@ export default function ProductDetailsPage() {
 
                         {/* RIGHT: Product Details */}
                         <div className="lg:col-span-5 flex flex-col pt-2 lg:pt-0">
-                            <p className="text-sm font-semibold tracking-widest uppercase text-muted-foreground mb-3">Outerwear</p>
-                            <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-foreground mb-4 leading-none">{mockProduct.name}</h1>
+                            <p className="text-sm font-semibold tracking-widest uppercase text-muted-foreground mb-3">{product.category}</p>
+                            <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-foreground mb-4 leading-none">{product.name}</h1>
 
                             <div className="flex items-center gap-4 mb-6">
                                 <div className="flex items-center gap-1">
                                     {[...Array(5)].map((_, i) => (
-                                        <Star key={i} className={`w-4 h-4 ${i < Math.floor(mockProduct.rating) ? 'fill-primary text-primary' : 'text-muted'}`} />
+                                        <Star key={i} className={`w-4 h-4 ${i < Math.floor(4.8) ? 'fill-primary text-primary' : 'text-muted'}`} />
                                     ))}
                                 </div>
-                                <span className="text-sm font-medium text-muted-foreground">{mockProduct.rating} ({mockProduct.reviews} Reviews)</span>
+                                <span className="text-sm font-medium text-muted-foreground">4.8 (124 Reviews)</span>
                             </div>
 
-                            <p className="text-3xl font-light text-foreground mb-8">{mockProduct.price}</p>
-                            <p className="text-base text-foreground/80 leading-relaxed mb-10">{mockProduct.description}</p>
+                            <p className="text-3xl font-light text-foreground mb-8">₹{Number(product.price).toLocaleString("en-IN")}</p>
+                            <p className="text-base text-foreground/80 leading-relaxed mb-10">{product.description}</p>
 
                             <Separator className="mb-8 bg-border/40" />
 
@@ -103,7 +111,7 @@ export default function ProductDetailsPage() {
                                     <span className="text-sm font-semibold uppercase tracking-wider">Color: <span className="text-muted-foreground font-normal ml-1">{selectedColor}</span></span>
                                 </div>
                                 <div className="flex gap-4">
-                                    {mockProduct.colors.map(color => (
+                                    {colors.map(color => (
                                         <button
                                             key={color.name}
                                             onClick={() => setSelectedColor(color.name)}
@@ -122,7 +130,7 @@ export default function ProductDetailsPage() {
                                     <button className="text-sm flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"><Ruler className="w-4 h-4" /> Size Guide</button>
                                 </div>
                                 <div className="grid grid-cols-5 gap-3">
-                                    {mockProduct.sizes.map(size => (
+                                    {sizes.map(size => (
                                         <button
                                             key={size}
                                             onClick={() => setSelectedSize(size)}
@@ -141,7 +149,21 @@ export default function ProductDetailsPage() {
                                     <span className="font-semibold text-lg">{quantity}</span>
                                     <Button variant="ghost" size="icon" onClick={() => setQuantity(quantity + 1)} className="rounded-none hover:bg-muted text-foreground/70"><Plus className="w-4 h-4" /></Button>
                                 </div>
-                                <Button className="w-full sm:w-2/3 h-14 text-lg font-bold rounded-none hover:scale-[1.01] transition-transform shadow-none bg-primary text-primary-foreground">
+                                <Button
+                                    onClick={() => {
+                                        addItem({
+                                            productId: product.id,
+                                            name: product.name,
+                                            price: product.price,
+                                            originalPrice: product.discount_price || null,
+                                            image: product.images[0],
+                                            color: selectedColor,
+                                            size: selectedSize,
+                                            quantity: quantity
+                                        });
+                                    }}
+                                    className="w-full sm:w-2/3 h-14 text-lg font-bold rounded-none hover:scale-[1.01] transition-transform shadow-none bg-primary text-primary-foreground"
+                                >
                                     Add To Cart
                                 </Button>
                             </div>

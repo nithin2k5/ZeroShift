@@ -48,7 +48,7 @@ export function Navbar() {
             initial={{ y: -100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="sticky top-4 z-50 w-[95%] max-w-7xl mx-auto rounded-full glass border shadow-lg transition-all duration-300"
+            className="fixed top-4 left-0 right-0 z-50 w-[95%] max-w-7xl mx-auto rounded-full glass border shadow-lg transition-all duration-300"
         >
             <div className="px-5 sm:px-8 h-16 flex items-center justify-between">
                 {/* Mobile Menu & Logo */}

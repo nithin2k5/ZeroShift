@@ -1,10 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { motion, Variants } from "framer-motion";
+
+import { useEffect, useState } from "react";
+import { productsApi, type Product } from "@/lib/api";
 
 const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -26,43 +30,13 @@ const itemVariants: Variants = {
 };
 
 export function FeaturedProducts() {
-    const products = [
-        {
-            id: 1,
-            name: "Minimalist Chronograph",
-            price: "₹12,499.00",
-            rating: 4.8,
-            reviews: 124,
-            image: "/images/prod-1.jpg",
-            badge: "Best Seller",
-        },
-        {
-            id: 2,
-            name: "Premium Leather Backpack",
-            price: "₹8,999.00",
-            rating: 4.9,
-            reviews: 86,
-            image: "/images/prod-2.jpg",
-            badge: "New",
-        },
-        {
-            id: 3,
-            name: "Wireless Noise-Canceling Earbuds",
-            price: "₹15,999.00",
-            rating: 4.7,
-            reviews: 210,
-            image: "/images/prod-3.jpg",
-        },
-        {
-            id: 4,
-            name: "Matte Black Sunglasses",
-            price: "₹6,499.00",
-            rating: 4.6,
-            reviews: 45,
-            image: "/images/prod-4.jpg",
-            badge: "Limited",
-        },
-    ];
+    const [products, setProducts] = useState<Product[]>([]);
+
+    useEffect(() => {
+        productsApi.getAll({ limit: "4", sort: "price-desc" })
+            .then(res => setProducts(res.products))
+            .catch(err => console.error("Failed to fetch featured products:", err));
+    }, []);
 
     return (
         <section className="min-h-screen flex flex-col justify-center bg-muted/30 relative py-16">
@@ -104,21 +78,25 @@ export function FeaturedProducts() {
                                     >
                                         <Heart className="h-6 w-6 stroke-[1.5]" />
                                     </Button>
-                                    <motion.img
-                                        whileHover={{ scale: 1.05 }}
-                                        transition={{ duration: 0.6, ease: "easeOut" }}
-                                        src={product.image}
-                                        alt={product.name}
-                                        className="object-cover w-full h-full cursor-pointer"
-                                    />
+                                    <Link href={`/products/${product.id}`} className="absolute inset-0 z-10 w-full h-full">
+                                        <motion.img
+                                            whileHover={{ scale: 1.05 }}
+                                            transition={{ duration: 0.6, ease: "easeOut" }}
+                                            src={product.images?.[0] || "/images/prod-1.jpg"}
+                                            alt={product.name}
+                                            className="object-cover w-full h-full cursor-pointer"
+                                        />
+                                    </Link>
                                 </div>
 
-                                <CardHeader className="p-3 px-1 pb-2 gap-1">
-                                    <CardTitle className="font-normal text-base hover:text-primary transition-colors cursor-pointer line-clamp-1">
-                                        {product.name}
-                                    </CardTitle>
+                                <CardHeader className="p-3 px-1 pb-2 gap-1 relative z-20">
+                                    <Link href={`/products/${product.id}`}>
+                                        <CardTitle className="font-normal text-base hover:text-primary transition-colors cursor-pointer line-clamp-1">
+                                            {product.name}
+                                        </CardTitle>
+                                    </Link>
                                     <CardDescription className="text-base font-medium text-foreground pt-0">
-                                        {product.price}
+                                        ₹{Number(product.price).toLocaleString("en-IN")}
                                     </CardDescription>
                                 </CardHeader>
 

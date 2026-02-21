@@ -1,10 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { motion, Variants } from "framer-motion";
+
+import { useEffect, useState } from "react";
+import { productsApi, type Product } from "@/lib/api";
 
 const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -26,43 +30,13 @@ const itemVariants: Variants = {
 };
 
 export function NewArrivals() {
-    const products = [
-        {
-            id: 1,
-            name: "Canvas Field Jacket",
-            price: "₹7,499.00",
-            rating: 4.9,
-            reviews: 56,
-            image: "/images/new-1.jpg",
-            badge: "Just Added",
-        },
-        {
-            id: 2,
-            name: "Linen Blend Overshirt",
-            price: "₹4,999.00",
-            rating: 4.7,
-            reviews: 32,
-            image: "/images/new-2.jpg",
-            badge: "Trending",
-        },
-        {
-            id: 3,
-            name: "Classic White Sneakers",
-            price: "₹6,999.00",
-            rating: 4.8,
-            reviews: 145,
-            image: "/images/new-3.jpg",
-        },
-        {
-            id: 4,
-            name: "Woven Leather Belt",
-            price: "₹2,599.00",
-            rating: 4.5,
-            reviews: 24,
-            image: "/images/new-4.jpg",
-            badge: "Low Stock",
-        },
-    ];
+    const [products, setProducts] = useState<Product[]>([]);
+
+    useEffect(() => {
+        productsApi.getAll({ limit: "4", sort: "newest" })
+            .then(res => setProducts(res.products))
+            .catch(err => console.error("Failed to fetch new arrivals:", err));
+    }, []);
 
     return (
         <section className="min-h-screen flex flex-col justify-center bg-background relative py-16">
@@ -104,21 +78,25 @@ export function NewArrivals() {
                                     >
                                         <Heart className="h-6 w-6 stroke-[1.5]" />
                                     </Button>
-                                    <motion.img
-                                        whileHover={{ scale: 1.05 }}
-                                        transition={{ duration: 0.6, ease: "easeOut" }}
-                                        src={product.image}
-                                        alt={product.name}
-                                        className="object-cover w-full h-full cursor-pointer"
-                                    />
+                                    <Link href={`/products/${product.id}`} className="absolute inset-0 z-10 w-full h-full">
+                                        <motion.img
+                                            whileHover={{ scale: 1.05 }}
+                                            transition={{ duration: 0.6, ease: "easeOut" }}
+                                            src={product.images?.[0] || "/images/new-1.jpg"}
+                                            alt={product.name}
+                                            className="object-cover w-full h-full cursor-pointer"
+                                        />
+                                    </Link>
                                 </div>
 
-                                <CardHeader className="p-3 px-1 pb-2 gap-1">
-                                    <CardTitle className="font-normal text-base hover:text-primary transition-colors cursor-pointer line-clamp-1">
-                                        {product.name}
-                                    </CardTitle>
+                                <CardHeader className="p-3 px-1 pb-2 gap-1 relative z-20">
+                                    <Link href={`/products/${product.id}`}>
+                                        <CardTitle className="font-normal text-base hover:text-primary transition-colors cursor-pointer line-clamp-1">
+                                            {product.name}
+                                        </CardTitle>
+                                    </Link>
                                     <CardDescription className="text-base font-medium text-foreground pt-0">
-                                        {product.price}
+                                        ₹{Number(product.price).toLocaleString("en-IN")}
                                     </CardDescription>
                                 </CardHeader>
 

@@ -12,16 +12,11 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { ordersApi } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-
-// Dummy cart for demo — replace with real cart state/context
-const cartItems = [
-    { product_id: null, name: "Canvas Field Jacket", image: "/images/new-1.jpg", price: 7499, qty: 1, size: "M", color: "Olive" },
-    { product_id: null, name: "Woven Leather Belt", image: "/images/new-4.jpg", price: 2599, qty: 1, size: "", color: "Black" },
-];
-
+import { useCart } from "@/context/CartContext";
 export default function CheckoutPage() {
     const router = useRouter();
     const { isAuthenticated, user } = useAuth();
+    const { items: cartItems } = useCart();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [form, setForm] = useState({
@@ -34,8 +29,8 @@ export default function CheckoutPage() {
         paymentMethod: "Card",
     });
 
-    const subtotal = cartItems.reduce((a, i) => a + i.price * i.qty, 0);
-    const shipping = subtotal >= 5000 ? 0 : 199;
+    const subtotal = cartItems.reduce((a, i) => a + i.price * i.quantity, 0);
+    const shipping = subtotal >= 5000 || subtotal === 0 ? 0 : 199;
     const total = subtotal + shipping;
 
     const set = (field: string, val: string) => setForm(f => ({ ...f, [field]: val }));
@@ -43,17 +38,16 @@ export default function CheckoutPage() {
     const handleOrder = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!isAuthenticated) { router.push("/login"); return; }
+        if (cartItems.length === 0) { setError("Your cart is empty"); return; }
+
         setError(""); setLoading(true);
         try {
-            await ordersApi.create({
-                items: cartItems,
-                shippingAddress: { name: form.name, street: form.street, city: form.city, state: form.state, zip: form.zip, country: form.country },
-                paymentMethod: form.paymentMethod,
-            });
-            router.push("/account?success=1");
+            // Save shipping and routing details to session storage
+            sessionStorage.setItem("zeroshift_checkout", JSON.stringify(form));
+            // Navigate to payment page
+            router.push("/checkout/payment");
         } catch (e: unknown) {
-            setError(e instanceof Error ? e.message : "Order failed. Please try again.");
-        } finally {
+            setError("Something went wrong. Please try again.");
             setLoading(false);
         }
     };
@@ -130,8 +124,8 @@ export default function CheckoutPage() {
                                 </div>
                             </div>
 
-                            <Button type="submit" disabled={loading} className="w-full h-14 rounded-none text-base font-bold shadow-none hover:scale-[1.01] transition-transform">
-                                {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Placing Order...</> : `PLACE ORDER — ₹${total.toLocaleString("en-IN")}`}
+                            <Button type="submit" disabled={loading || cartItems.length === 0} className="w-full h-14 rounded-none text-base font-bold shadow-none hover:scale-[1.01] transition-transform">
+                                {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing...</> : `PROCEED TO PAYMENT`}
                             </Button>
                         </form>
 
@@ -149,7 +143,7 @@ export default function CheckoutPage() {
                                             <div className="flex-1 min-w-0">
                                                 <p className="font-medium line-clamp-2 text-sm">{item.name}</p>
                                                 {item.size && <p className="text-xs text-muted-foreground mt-1">Size: {item.size}</p>}
-                                                <p className="text-sm font-bold mt-2">₹{(item.price * item.qty).toLocaleString("en-IN")}</p>
+                                                <p className="text-sm font-bold mt-2">₹{(item.price * item.quantity).toLocaleString("en-IN")} <span className="text-muted-foreground font-normal text-xs ml-1">(Qty: {item.quantity})</span></p>
                                             </div>
                                         </motion.div>
                                     ))}

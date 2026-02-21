@@ -92,7 +92,7 @@ export function HeroSection() {
                         initial={{ opacity: 0, scale: 0.95, rotate: -2 }}
                         animate={{ opacity: 1, scale: 1, rotate: 0 }}
                         transition={{ duration: 0.8, delay: 0.4, type: "spring" }}
-                        className="flex-1 relative w-full max-w-xl lg:max-w-none mx-auto"
+                        className="flex-1 relative w-full max-w-sm md:max-w-md lg:max-w-md xl:max-w-lg mx-auto lg:ml-auto"
                     >
                         <div className="relative aspect-[4/5] lg:aspect-[3/4] overflow-hidden rounded-[2.5rem] bg-muted/30 border border-border/50 shadow-2xl">
                             <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent mix-blend-overlay z-10"></div>

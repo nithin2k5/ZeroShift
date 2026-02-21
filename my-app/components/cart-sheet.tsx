@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ShoppingCart, X, Minus, Plus, ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -12,57 +13,21 @@ import {
     SheetTitle,
     SheetTrigger,
 } from "@/components/ui/sheet";
-
-// Dummy Cart Data
-const initialCartItems = [
-    {
-        id: "1",
-        name: "Classic Heavyweight Override Jacket",
-        price: 8499,
-        originalPrice: 10499,
-        image: "/images/prod-1.jpg",
-        color: "Forest Green",
-        size: "M",
-        quantity: 1,
-    },
-    {
-        id: "2",
-        name: "Woven Leather Belt",
-        price: 2599,
-        originalPrice: null,
-        image: "/images/new-4.jpg",
-        color: "Black",
-        size: "One Size",
-        quantity: 2,
-    }
-];
+import { useCart } from "@/context/CartContext";
 
 export function CartSheet() {
-    const [cartItems, setCartItems] = useState(initialCartItems);
-
-    const updateQuantity = (id: string, delta: number) => {
-        setCartItems(items => items.map(item => {
-            if (item.id === id) {
-                const newQuantity = Math.max(1, item.quantity + delta);
-                return { ...item, quantity: newQuantity };
-            }
-            return item;
-        }));
-    };
-
-    const removeItem = (id: string) => {
-        setCartItems(items => items.filter(item => item.id !== id));
-    };
+    const router = useRouter();
+    const { items: cartItems, removeItem, updateQuantity, isCartOpen, setCartOpen } = useCart();
 
     const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-    const shipping = subtotal > 10000 ? 0 : 250;
+    const shipping = subtotal > 10000 || subtotal === 0 ? 0 : 250;
     const total = subtotal + shipping;
 
     // Formatting for INR
     const formatPrice = (price: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(price);
 
     return (
-        <Sheet>
+        <Sheet open={isCartOpen} onOpenChange={setCartOpen}>
             <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative hover:bg-transparent text-foreground/70 hover:text-foreground transition-colors group">
                     <ShoppingCart className="h-5 w-5" />
@@ -162,7 +127,7 @@ export function CartSheet() {
                             </div>
                         )}
 
-                        <Button className="w-full h-14 rounded-none text-base font-bold shadow-none flex items-center justify-between px-6 hover:scale-[1.01] transition-transform">
+                        <Button onClick={() => { setCartOpen(false); router.push("/checkout"); }} className="w-full h-14 rounded-none text-base font-bold shadow-none flex items-center justify-between px-6 hover:scale-[1.01] transition-transform">
                             <span>CHECKOUT</span>
                             <div className="flex items-center gap-2">
                                 <span>{formatPrice(total)}</span>

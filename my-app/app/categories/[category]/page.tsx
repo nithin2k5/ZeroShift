@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { motion, Variants } from "framer-motion";
 import { Heart, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { Navbar } from "@/components/navbar";
@@ -9,17 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-// Dummy Product Data with Categories
-const products = [
-    { id: 1, name: "Canvas Field Jacket", price: "₹7,499.00", image: "/images/new-1.jpg", badge: "Just Added", category: "men" },
-    { id: 2, name: "Linen Blend Overshirt", price: "₹4,999.00", image: "/images/new-2.jpg", badge: "Trending", category: "men" },
-    { id: 3, name: "Classic White Sneakers", price: "₹6,999.00", image: "/images/new-3.jpg", category: "footwear" },
-    { id: 4, name: "Woven Leather Belt", price: "₹2,599.00", image: "/images/new-4.jpg", badge: "Low Stock", category: "accessories" },
-    { id: 5, name: "Essential Heavyweight Tee", price: "₹2,299.00", image: "/images/prod-4.jpg", category: "men" },
-    { id: 6, name: "Tailored Chino Trousers", price: "₹3,999.00", image: "/images/prod-2.jpg", badge: "Best Seller", category: "women" },
-    { id: 7, name: "Merino Wool Crewneck", price: "₹5,499.00", image: "/images/prod-3.jpg", badge: "Sale", category: "women" },
-    { id: 8, name: "Premium Denim Jacket", price: "₹8,999.00", image: "/images/prod-1.jpg", category: "men" },
-];
+import { useEffect, useState } from "react";
+import { productsApi, type Product } from "@/lib/api";
 
 const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -35,11 +27,15 @@ export default function CategoryPage() {
     const params = useParams();
     const categoryId = (params?.category as string) || "collection";
 
-    // Capitalize category name for display
     const title = categoryId.charAt(0).toUpperCase() + categoryId.slice(1).replace(/-/g, " ");
 
-    // Filter products based on category route
-    const filteredProducts = products.filter(product => product.category === categoryId);
+    const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+
+    useEffect(() => {
+        productsApi.getAll({ category: categoryId, sort: "newest" })
+            .then(res => setFilteredProducts(res.products))
+            .catch(err => console.error("Failed to fetch category products:", err));
+    }, [categoryId]);
 
     return (
         <main className="min-h-screen bg-background flex flex-col">
@@ -90,21 +86,25 @@ export default function CategoryPage() {
                                             >
                                                 <Heart className="h-6 w-6 stroke-[1.5]" />
                                             </Button>
-                                            <motion.img
-                                                whileHover={{ scale: 1.05 }}
-                                                transition={{ duration: 0.6, ease: "easeOut" }}
-                                                src={product.image}
-                                                alt={product.name}
-                                                className="object-cover w-full h-full cursor-pointer"
-                                            />
+                                            <Link href={`/products/${product.id}`} className="absolute inset-0 z-10 w-full h-full">
+                                                <motion.img
+                                                    whileHover={{ scale: 1.05 }}
+                                                    transition={{ duration: 0.6, ease: "easeOut" }}
+                                                    src={product.images?.[0] || "/images/prod-1.jpg"}
+                                                    alt={product.name}
+                                                    className="object-cover w-full h-full cursor-pointer"
+                                                />
+                                            </Link>
                                         </div>
 
-                                        <CardHeader className="p-3 px-1 pb-2 gap-1">
-                                            <CardTitle className="font-normal text-base hover:text-primary transition-colors cursor-pointer line-clamp-1">
-                                                {product.name}
-                                            </CardTitle>
+                                        <CardHeader className="p-3 px-1 pb-2 gap-1 relative z-20">
+                                            <Link href={`/products/${product.id}`}>
+                                                <CardTitle className="font-normal text-base hover:text-primary transition-colors cursor-pointer line-clamp-1">
+                                                    {product.name}
+                                                </CardTitle>
+                                            </Link>
                                             <CardDescription className="text-base font-medium text-foreground pt-0">
-                                                {product.price}
+                                                ₹{Number(product.price).toLocaleString("en-IN")}
                                             </CardDescription>
                                         </CardHeader>
                                         <CardContent className="hidden" />

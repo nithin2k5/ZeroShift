@@ -1,103 +1,87 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Loader2, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
+    const router = useRouter();
+    const { login } = useAuth();
+
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError(""); setLoading(true);
+        try {
+            await login(email, password);
+            router.push("/account");
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Invalid email or password");
+        } finally { setLoading(false); }
+    };
+
     return (
         <main className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-background">
-
-            {/* Left Image Section */}
-            <div className="relative hidden lg:block bg-muted overflow-hidden">
+            {/* Left — Visual */}
+            <div className="hidden lg:block relative bg-muted overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-foreground/5 to-foreground/20" />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                    src="/images/hero.jpg"
-                    alt="LuxeCart Identity"
-                    className="absolute inset-0 w-full h-full object-cover grayscale opacity-90"
-                />
-                <div className="absolute inset-0 bg-black/30" />
-
-                <div className="absolute inset-0 flex flex-col justify-between p-12">
-                    <Link href="/" className="text-white hover:opacity-80 transition-opacity flex items-center gap-2">
-                        <ArrowLeft className="w-5 h-5" /> Back to store
-                    </Link>
-                    <div>
-                        <h2 className="text-white text-5xl font-black tracking-tight mb-4">Welcome Back</h2>
-                        <p className="text-white/80 text-xl font-light max-w-md">Sign in to access your curated wardrobe, track orders, and experience faster checkout.</p>
-                    </div>
+                <img src="/images/hero.jpg" alt="ZeroShift" className="w-full h-full object-cover opacity-70" />
+                <div className="absolute inset-0 flex flex-col justify-end p-12">
+                    <h2 className="text-5xl font-black tracking-tighter text-background leading-none mb-3">Welcome<br />Back.</h2>
+                    <p className="text-background/70 text-sm max-w-xs">Log in to access your orders, profile, and exclusive member offers.</p>
                 </div>
             </div>
 
-            {/* Right Form Section */}
-            <div className="flex flex-col justify-center px-8 sm:px-16 md:px-24 py-12 lg:py-0">
-
-                {/* Mobile Back Button */}
-                <Link href="/" className="lg:hidden text-foreground hover:opacity-80 transition-opacity flex items-center gap-2 mb-12">
-                    <ArrowLeft className="w-5 h-5" /> Back to store
+            {/* Right — Form */}
+            <div className="flex flex-col justify-center px-8 py-16 lg:px-16 relative">
+                <Link href="/" className="absolute top-8 left-8 text-foreground hover:opacity-70 transition-opacity flex items-center gap-2 text-sm">
+                    <ArrowLeft className="w-4 h-4" /> Back
                 </Link>
 
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
-                    className="w-full max-w-md mx-auto"
-                >
-                    <div className="mb-10 lg:hidden">
-                        <h1 className="text-4xl font-black tracking-tight mb-2">Welcome Back</h1>
-                        <p className="text-muted-foreground">Sign in to access your account.</p>
+                <div className="max-w-sm w-full mx-auto">
+                    <div className="flex items-center gap-3 mb-2">
+                        <KeyRound className="w-6 h-6" />
+                        <h1 className="text-4xl font-black tracking-tighter">Log In</h1>
                     </div>
+                    <p className="text-muted-foreground text-sm mb-10">Enter your email and password to access your account.</p>
 
-                    <div className="hidden lg:block mb-10 text-center">
-                        <h1 className="text-4xl font-black tracking-tighter mb-2">Log In</h1>
-                        <p className="text-muted-foreground text-sm">Enter your details to proceed.</p>
-                    </div>
+                    {error && <div className="mb-6 p-3 bg-destructive/10 border border-destructive/30 rounded-sm text-destructive text-sm font-medium">{error}</div>}
 
-                    <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-
+                    <form onSubmit={handleLogin} className="space-y-5">
                         <div className="space-y-2">
-                            <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                Email Address
-                            </label>
-                            <Input
-                                id="email"
-                                type="email"
-                                placeholder="name@example.com"
-                                className="h-12 rounded-none border-border/60 focus-visible:ring-1 focus-visible:ring-foreground shadow-none"
-                            />
+                            <label htmlFor="email" className="text-sm font-medium">Email Address</label>
+                            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                                placeholder="you@example.com" required autoFocus
+                                className="h-12 rounded-none border-border/60 shadow-none focus-visible:ring-1 focus-visible:ring-foreground" />
                         </div>
-
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                                <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                    Password
-                                </label>
-                                <Link href="#" className="text-xs text-muted-foreground hover:text-foreground hover:underline transition-colors">
-                                    Forgot password?
-                                </Link>
+                                <label htmlFor="password" className="text-sm font-medium">Password</label>
+                                <Link href="/forgot-password" className="text-xs font-semibold text-muted-foreground hover:text-foreground">Forgot password?</Link>
                             </div>
-                            <Input
-                                id="password"
-                                type="password"
-                                className="h-12 rounded-none border-border/60 focus-visible:ring-1 focus-visible:ring-foreground shadow-none"
-                            />
+                            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+                                placeholder="••••••••" required
+                                className="h-12 rounded-none border-border/60 shadow-none focus-visible:ring-1 focus-visible:ring-foreground" />
                         </div>
-
-                        <Button type="button" className="w-full h-12 rounded-none text-base font-bold shadow-none hover:scale-[1.01] transition-transform bg-primary text-primary-foreground">
-                            SIGN IN
+                        <Button type="submit" disabled={loading} className="w-full h-12 rounded-none text-base font-bold shadow-none mt-2">
+                            {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Signing in...</> : "LOG IN →"}
                         </Button>
                     </form>
 
-                    <div className="mt-8 text-center text-sm text-muted-foreground">
+                    <p className="mt-8 text-center text-sm text-muted-foreground">
                         Don&apos;t have an account?{" "}
-                        <Link href="/register" className="text-foreground font-semibold hover:underline">
-                            Create one
-                        </Link>
-                    </div>
-
-                </motion.div>
+                        <Link href="/signup" className="text-foreground font-semibold hover:underline">Sign up</Link>
+                    </p>
+                </div>
             </div>
         </main>
     );

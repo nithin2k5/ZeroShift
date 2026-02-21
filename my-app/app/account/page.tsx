@@ -1,152 +1,130 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { User, Package, Settings, LogOut, MapPin, CreditCard } from "lucide-react";
-import { Navbar } from "@/components/navbar";
-import { Footer } from "@/components/footer";
+import { Package, Loader2, ArrowRight, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { ordersApi, type Order } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
+import Link from "next/link";
 
-// Dummy order data
-const orderHistory = [
-    {
-        id: "#ORD-90812X",
-        date: "Oct 12, 2026",
-        status: "Delivered",
-        total: "₹11,098.00",
-        items: [
-            { name: "Classic Heavyweight Override Jacket", qty: 1, image: "/images/prod-1.jpg" },
-            { name: "Woven Leather Belt", qty: 1, image: "/images/new-4.jpg" }
-        ]
-    },
-    {
-        id: "#ORD-83491Z",
-        date: "Sep 04, 2026",
-        status: "Processing",
-        total: "₹4,999.00",
-        items: [
-            { name: "Linen Blend Overshirt", qty: 1, image: "/images/new-2.jpg" }
-        ]
-    }
-];
+export default function OrdersPage() {
+    const { isAuthenticated, loading: authLoading } = useAuth();
+    const [orders, setOrders] = useState<Order[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
-export default function AccountPage() {
+    useEffect(() => {
+        if (authLoading) return;
+        if (!isAuthenticated) { setLoading(false); return; }
+        ordersApi.myOrders()
+            .then((res) => setOrders(res.orders))
+            .catch((e) => setError(e.message))
+            .finally(() => setLoading(false));
+    }, [isAuthenticated, authLoading]);
+
+    if (loading || authLoading) return (
+        <div className="flex items-center justify-center py-32">
+            <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
+        </div>
+    );
+
+    if (!isAuthenticated) return (
+        <div className="text-center py-32 max-w-md mx-auto">
+            <Package className="w-16 h-16 mx-auto mb-6 text-muted-foreground/30" />
+            <h3 className="text-2xl font-black mb-3 tracking-tight">Sign in to view orders</h3>
+            <p className="text-muted-foreground mb-8">Access your complete purchase history and track active shipments.</p>
+            <Button asChild className="rounded-none h-14 w-full text-base font-bold shadow-none"><Link href="/login">LOG IN TO ACCOUNT</Link></Button>
+        </div>
+    );
+
+    if (error) return (
+        <div className="p-8 border border-destructive/20 bg-destructive/5 text-destructive font-medium flex flex-col items-center text-center">
+            <p className="text-lg font-bold mb-2">Unable to load orders</p>
+            <p className="text-sm opacity-80">{error}</p>
+        </div>
+    );
+
     return (
-        <main className="min-h-screen bg-background flex flex-col">
-            <Navbar />
-
-            <div className="flex-1 pt-32 pb-24">
-                <div className="container mx-auto px-4 md:px-8 max-w-6xl">
-
-                    {/* Header */}
-                    <div className="mb-12">
-                        <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-4">My Account</h1>
-                        <p className="text-muted-foreground">Welcome back, John Doe. Manage your orders and account details here.</p>
-                    </div>
-
-                    <div className="flex flex-col md:flex-row gap-12">
-
-                        {/* Sidebar Navigation */}
-                        <aside className="w-full md:w-64 shrink-0">
-                            <nav className="flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-visible pb-4 md:pb-0 scrollbar-hide">
-                                <Button variant="secondary" className="justify-start h-12 px-4 shadow-none font-semibold rounded-sm bg-muted whitespace-nowrap">
-                                    <Package className="w-5 h-5 mr-3" /> Orders
-                                </Button>
-                                <Button variant="ghost" className="justify-start h-12 px-4 hover:bg-muted font-medium rounded-sm whitespace-nowrap text-muted-foreground hover:text-foreground">
-                                    <User className="w-5 h-5 mr-3" /> Profile
-                                </Button>
-                                <Button variant="ghost" className="justify-start h-12 px-4 hover:bg-muted font-medium rounded-sm whitespace-nowrap text-muted-foreground hover:text-foreground">
-                                    <MapPin className="w-5 h-5 mr-3" /> Addresses
-                                </Button>
-                                <Button variant="ghost" className="justify-start h-12 px-4 hover:bg-muted font-medium rounded-sm whitespace-nowrap text-muted-foreground hover:text-foreground">
-                                    <CreditCard className="w-5 h-5 mr-3" /> Payment Methods
-                                </Button>
-                                <Button variant="ghost" className="justify-start h-12 px-4 hover:bg-muted font-medium rounded-sm whitespace-nowrap text-muted-foreground hover:text-foreground">
-                                    <Settings className="w-5 h-5 mr-3" /> Settings
-                                </Button>
-                                <Separator className="hidden md:block my-2 bg-border/40" />
-                                <Button variant="ghost" className="justify-start h-12 px-4 text-destructive hover:bg-destructive/10 hover:text-destructive font-medium rounded-sm whitespace-nowrap">
-                                    <LogOut className="w-5 h-5 mr-3" /> Log Out
-                                </Button>
-                            </nav>
-                        </aside>
-
-                        {/* Main Content Area */}
-                        <div className="flex-1 min-w-0">
-
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.4 }}
-                            >
-                                <h2 className="text-2xl font-bold tracking-tight mb-8">Order History</h2>
-
-                                {orderHistory.length === 0 ? (
-                                    <div className="bg-muted border border-border/40 rounded-sm p-12 text-center">
-                                        <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                                        <h3 className="text-lg font-bold mb-2">No orders yet</h3>
-                                        <p className="text-muted-foreground mb-6">Looks like you haven&apos;t placed an order yet.</p>
-                                        <Button className="rounded-none px-6 shadow-none">Start Shopping</Button>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-6">
-                                        {orderHistory.map((order) => (
-                                            <div key={order.id} className="border border-border/60 rounded-sm overflow-hidden bg-background group hover:border-foreground/30 transition-colors">
-
-                                                {/* Order Header */}
-                                                <div className="bg-muted p-4 sm:p-6 flex flex-col sm:flex-row gap-4 sm:items-center justify-between border-b border-border/40">
-                                                    <div className="grid grid-cols-2 sm:flex sm:gap-12 gap-y-4 text-sm">
-                                                        <div>
-                                                            <p className="text-muted-foreground mb-1 uppercase tracking-wider text-[10px] font-bold">Order Placed</p>
-                                                            <p className="font-medium">{order.date}</p>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-muted-foreground mb-1 uppercase tracking-wider text-[10px] font-bold">Total</p>
-                                                            <p className="font-medium">{order.total}</p>
-                                                        </div>
-                                                        <div className="col-span-2 sm:col-span-1">
-                                                            <p className="text-muted-foreground mb-1 uppercase tracking-wider text-[10px] font-bold">Order Number</p>
-                                                            <p className="font-mono text-xs mt-1">{order.id}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex flex-col sm:items-end gap-2">
-                                                        <Badge variant={order.status === "Delivered" ? "default" : "secondary"} className="shadow-none rounded-none px-3 font-semibold w-fit">
-                                                            {order.status}
-                                                        </Badge>
-                                                        <Button variant="link" className="p-0 h-auto text-xs text-muted-foreground hover:text-foreground">View Invoice &rarr;</Button>
-                                                    </div>
-                                                </div>
-
-                                                {/* Order Body */}
-                                                <div className="p-4 sm:p-6">
-                                                    <div className="flex overflow-x-auto gap-4 scrollbar-hide">
-                                                        {order.items.map((item, idx) => (
-                                                            <div key={idx} className="relative w-24 h-32 bg-muted shrink-0 group-hover:scale-[1.02] transition-transform">
-                                                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                                <img src={item.image} alt={item.name} className="absolute inset-0 w-full h-full object-cover" />
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                    <div className="mt-6 flex gap-4">
-                                                        <Button variant="outline" className="flex-1 rounded-none border-border/60 h-10 shadow-none">Track Package</Button>
-                                                        <Button className="flex-1 rounded-none h-10 shadow-none">Buy Again</Button>
-                                                    </div>
-                                                </div>
-
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </motion.div>
-
-                        </div>
-
-                    </div>
-                </div>
+        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
+            <div className="flex items-center justify-between mb-10">
+                <h2 className="text-3xl font-black tracking-tighter uppercase">Order History</h2>
+                <Badge variant="outline" className="rounded-full px-4 py-1 text-sm font-semibold tracking-wide bg-background border-border/60">
+                    {orders.length} {orders.length === 1 ? 'Order' : 'Orders'}
+                </Badge>
             </div>
 
-            <Footer />
-        </main>
+            {orders.length === 0 ? (
+                <div className="bg-background border border-border/40 p-16 md:p-24 text-center flex flex-col items-center justify-center shadow-sm">
+                    <div className="w-24 h-24 bg-muted flex items-center justify-center rounded-full mb-8">
+                        <Package className="w-10 h-10 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-3xl font-black mb-4 tracking-tight">Your wardrobe is empty.</h3>
+                    <p className="text-muted-foreground text-lg mb-10 max-w-md">You haven&apos;t placed any orders yet. Discover our latest premium collections.</p>
+                    <Button asChild className="rounded-none h-14 px-10 text-base font-bold shadow-none group">
+                        <Link href="/categories">
+                            MENSWEAR COLLECTION <ArrowRight className="w-4 h-4 ml-3 group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                    </Button>
+                </div>
+            ) : (
+                <div className="space-y-12">
+                    {orders.map((order, i) => (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: i * 0.1 }}
+                            key={order.id}
+                            className="bg-background border border-border/40 hover:border-foreground/30 transition-colors shadow-sm group"
+                        >
+                            {/* Order Header */}
+                            <div className="p-6 md:p-8 flex flex-col lg:flex-row gap-6 lg:items-center justify-between border-b border-border/40 bg-zinc-50/50 dark:bg-zinc-900/20">
+                                <div className="grid grid-cols-2 lg:flex lg:gap-16 gap-y-6 text-sm">
+                                    <div>
+                                        <p className="text-muted-foreground mb-2 text-xs uppercase tracking-[0.15em] font-bold">Placed On</p>
+                                        <p className="text-lg font-medium">{new Date(order.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-muted-foreground mb-2 text-xs uppercase tracking-[0.15em] font-bold">Total Amount</p>
+                                        <p className="text-lg font-medium tracking-tight">₹{Number(order.total_amount).toLocaleString("en-IN")}</p>
+                                    </div>
+                                    <div className="col-span-2 lg:col-span-1">
+                                        <p className="text-muted-foreground mb-2 text-xs uppercase tracking-[0.15em] font-bold">Order ID</p>
+                                        <p className="font-mono text-base tracking-wider bg-muted/50 w-fit px-2 py-1">#{order.id.slice(0, 8).toUpperCase()}</p>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col sm:items-end gap-3 self-start lg:self-center">
+                                    <Badge variant={order.status === "Delivered" ? "default" : "outline"} className={`rounded-none px-4 py-1.5 text-xs font-bold uppercase tracking-wider shadow-none ${order.status !== 'Delivered' ? 'border-foreground text-foreground' : ''}`}>
+                                        {order.status}
+                                    </Badge>
+                                </div>
+                            </div>
+
+                            {/* Order Body */}
+                            <div className="p-6 md:p-8">
+                                <div className="flex overflow-x-auto gap-6 pb-4 scrollbar-hide">
+                                    {(order.items || []).map((item, idx) => (
+                                        <div key={idx} className="relative w-32 h-40 md:w-40 md:h-52 bg-muted shrink-0 group-hover:shadow-md transition-all overflow-hidden">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img src={item.image || "/images/prod-1.jpg"} alt={item.name} className="absolute inset-0 w-full h-full object-cover mix-blend-multiply dark:mix-blend-normal group-hover:scale-105 transition-transform duration-700" />
+                                            <div className="absolute top-2 left-2 bg-background/90 backdrop-blur-sm px-2 py-0.5 text-[10px] font-bold tracking-widest uppercase">Qty: {item.qty}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-end">
+                                    <Button variant="outline" className="rounded-none border-border/60 h-12 px-8 shadow-none font-bold tracking-wide hover:bg-muted transition-colors">
+                                        VIEW INVOICE
+                                    </Button>
+                                    <Button className="rounded-none h-12 px-8 shadow-none font-bold tracking-wide flex items-center gap-2 group/btn">
+                                        TRACK ORDER <ExternalLink className="w-4 h-4 group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+            )}
+        </motion.div>
     );
 }

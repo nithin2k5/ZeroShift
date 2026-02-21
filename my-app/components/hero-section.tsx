@@ -26,7 +26,7 @@ const itemVariants: Variants = {
 
 export function HeroSection() {
     return (
-        <section className="relative overflow-hidden bg-background min-h-screen flex items-center pt-24 pb-16">
+        <section className="relative overflow-hidden bg-background h-screen flex items-center pt-24 pb-16">
             {/* Background decoration */}
             <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background"></div>
 
